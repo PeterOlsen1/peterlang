@@ -16,10 +16,10 @@ export class Node {
 }
 
 export class BinaryNode extends Node {
-    left: Node;
-    right: Node;
+    left: Node|ExpressionTree;
+    right: Node|ExpressionTree;
 
-    constructor(token: Token, left: Node, right: Node) {
+    constructor(token: Token, left: Node|ExpressionTree, right: Node|ExpressionTree) {
         super(token);
         this.left = left;
         this.right = right;
@@ -27,23 +27,29 @@ export class BinaryNode extends Node {
 }
 
 export class UnaryNode extends Node {
-    child: Node;
+    child: Node|ExpressionTree;
 
-    constructor(token: Token, child: Node) {
+    constructor(token: Token, child: Node|ExpressionTree) {
         super(token);
         this.child = child;
     }
 }
 
 export class MultiNode extends Node {
-    children: Node[];
+    children: Node|ExpressionTree[];
 
-    constructor(token: Token, children: Node[]) {
+    constructor(token: Token, children: Node|ExpressionTree[]) {
         super(token);
         this.children = children;
     }
 }
 
+/**
+ * Model expressions with a tree structure
+ * 
+ * This way, we can evaluate expressions recursively
+ * and from the bottom up
+ */
 export class ExpressionTree {
     root: Node;
 

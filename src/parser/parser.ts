@@ -21,7 +21,8 @@ class Parser {
             }
         }
 
-        this.parseExpression(lines[0]);
+        const exp = this.parseExpression(lines[0]);
+        console.log(exp);
     }
 
     //PEMDAS

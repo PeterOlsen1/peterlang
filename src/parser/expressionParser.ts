@@ -14,17 +14,36 @@ export class ExpressionParser {
         this.current = 0;
     }
 
-    parseExpression() {
+    parseExpression(): ExpressionTree | Node {
         //check if the expression contains parentheses
         const paren = this.findNext(TokenType.LEFT_PAREN);
         if (paren !== -1) {
-            const parser = new ExpressionParser(this.tokens.slice(paren + 1, this.findCorrespondingParen()));
-            parser.parseExpression();
+            const sliced = this.tokens.slice(paren + 1, this.findCorrespondingParen());
+            const parser = new ExpressionParser(sliced);
+            const inner = parser.parseExpression();
+
+            //replace parenthesis with the expression tree
+            this.tokens = this.tokens.slice(0, paren).concat(inner).concat(this.tokens.slice(this.findCorrespondingParen() + 1));
         }
 
-        // const ast = new Ast();
+        const operator = this.findNextOperator();
+        if (operator == -1) {
+            //no operator was found
+            const token = this.advance();
+            return new Node(token);
+        }
 
-        console.log(this.findCorrespondingParen());
+        let left = this.tokens.slice(0, operator);
+        let right = this.tokens.slice(operator + 1);
+
+        const parser = new ExpressionParser(left);
+        let leftTree = parser.parseExpression();
+        parser.reset(right);
+        let rightTree = parser.parseExpression();  
+
+        const op = this.tokens[operator];
+        const node = new BinaryNode(op, leftTree, rightTree);
+        return node;
     }
 
     end() {
@@ -46,6 +65,29 @@ export class ExpressionParser {
                 return i;
             }
             i++;
+        }
+        return -1;
+    }
+
+    /**
+     * Find the next operator in the order of presedence
+     */
+    findNextOperator(): number {
+        let multi = this.findNext(TokenType.STAR);
+        if (multi) {
+            return multi;
+        }
+        let slash = this.findNext(TokenType.SLASH);
+        if (slash) {
+            return slash;
+        }
+        let plus = this.findNext(TokenType.PLUS);
+        if (plus) {
+            return plus;
+        }
+        let minus = this.findNext(TokenType.MINUS);
+        if (minus) {
+            return minus;
         }
         return -1;
     }
