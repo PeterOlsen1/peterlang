@@ -48,13 +48,6 @@ class Lexer {
         return this.tokens;
     }
 
-    /**
-     * determine if we are at end of file
-     */
-    end(): boolean {
-        return this.current >= this.contents.length;
-    }
-
     scanToken() {
         const c = this.advance();
         switch (c) {
@@ -121,24 +114,12 @@ class Lexer {
         }
     }
 
-    debug() {
-        console.log("Lexer debug:");
-        console.log(`Current: ${this.peek()} (${this.current})`);
-    }
-
     /**
      * Add a token to token list
      */
     addToken(type: TokenType, literal: any = null) {
         const text = this.contents.substring(this.start, this.current);
         this.tokens.push(new Token(type, text, literal, this.line));
-    }
-
-    /**
-     * Return contents at current index and advance it once
-     */
-    advance(): string {
-        return this.contents[this.current++];
     }
 
     handleNumber() {
@@ -194,6 +175,28 @@ class Lexer {
         }
 
         this.addToken(TokenType.IDENTIFIER, substring);
+    }
+
+    //=========================================================================
+    // Helper Functions
+    
+    debug() {
+        console.log("Lexer debug:");
+        console.log(`Current: ${this.peek()} (${this.current})`);
+    }
+
+    /**
+     * Return contents at current index and advance it once
+     */
+    advance(): string {
+        return this.contents[this.current++];
+    }
+
+    /**
+     * determine if we are at end of file
+     */
+    end(): boolean {
+        return this.current >= this.contents.length;
     }
 
     /**
