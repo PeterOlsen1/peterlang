@@ -51,9 +51,13 @@ export class MultiNode extends Node {
  * and from the bottom up
  */
 export class ExpressionTree {
-    root: Node;
+    children: ExpressionTree[] = [];
+    token: Token;
 
-    constructor(node: Node) {
-        this.root = node;
+    constructor(token: Token, ...children: ExpressionTree[]) {
+        this.token = token;
+        if (children) {
+            this.children = children;
+        }
     }
 }

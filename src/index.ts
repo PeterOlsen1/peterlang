@@ -1,3 +1,4 @@
+import { ExpressionEvaluator } from "./evaluator/expressionEvaluator";
 import Lexer from "./lexer/lexer";
 import Parser from "./parser/parser";
 
@@ -16,7 +17,7 @@ function interpret(fname: string) {
     let tokens = lexer.lex();
 
     let parser = new Parser(tokens);
-    parser.parse();
+    let res = parser.parse();
 }
 
 interpret(fname);

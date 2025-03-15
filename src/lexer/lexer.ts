@@ -48,6 +48,15 @@ class Lexer {
         return this.tokens;
     }
 
+    lexString(input: string): Token[] {
+        this.contents = input;
+        while (!this.end()) {
+            this.start = this.current;
+            this.scanToken();
+        }
+        return this.tokens;
+    }
+
     scanToken() {
         const c = this.advance();
         switch (c) {

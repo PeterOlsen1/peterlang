@@ -1,6 +1,6 @@
 import { TokenType, Token } from "../lexer/token";
-import { ExpressionTree, BinaryNode, UnaryNode, MultiNode, Node } from "./expressionTree";
 import { ExpressionParser } from "./expressionParser";
+import { ExpressionEvaluator } from "../evaluator/expressionEvaluator";
 
 class Parser {
     private tokens: Token[] = [];
@@ -22,14 +22,17 @@ class Parser {
         }
 
         const exp = this.parseExpression(lines[0]);
-        console.log(exp);
+
+        let evaluator = new ExpressionEvaluator(exp);
+        let result = evaluator.evaluate();
+        console.log(result);
     }
 
     //PEMDAS
     parseExpression(tokens: Token[]) {
         console.log(tokens);
         const parser = new ExpressionParser(tokens);
-        parser.parseExpression();
+        return parser.parseExpression();
     }
 }
 

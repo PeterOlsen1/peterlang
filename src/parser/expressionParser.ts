@@ -1,5 +1,6 @@
 import { ExpressionTree, BinaryNode, UnaryNode, MultiNode, Node } from "./expressionTree";
 import { TokenType, Token } from "../lexer/token";
+import { ExpressionEvaluator } from "../evaluator/expressionEvaluator";
 
 export class ExpressionParser {
     tokens: Token[] = [];
@@ -14,23 +15,31 @@ export class ExpressionParser {
         this.current = 0;
     }
 
-    parseExpression(): ExpressionTree | Node {
-        //check if the expression contains parentheses
+    parseExpression(): ExpressionTree {
+        // Check if the expression contains parentheses
         const paren = this.findNext(TokenType.LEFT_PAREN);
         if (paren !== -1) {
-            const sliced = this.tokens.slice(paren + 1, this.findCorrespondingParen());
+            console.log("parenthesis");
+            const sliced = this.tokens.slice(paren + 1, this.findCorrespondingParen(paren));
             const parser = new ExpressionParser(sliced);
             const inner = parser.parseExpression();
 
-            //replace parenthesis with the expression tree
-            this.tokens = this.tokens.slice(0, paren).concat(inner).concat(this.tokens.slice(this.findCorrespondingParen() + 1));
+            //evaluate the inner expression tree and turn it into a token
+            const evaluator = new ExpressionEvaluator(inner);
+            const result = evaluator.evaluate();
+            const resultToken = new Token(TokenType.NUMBER, result.toString(), result, inner.token.line);
+
+            // replace the parenthesized expression with the result
+            this.tokens = this.tokens.slice(0, paren)
+                .concat(resultToken)
+                .concat(this.tokens.slice(this.findCorrespondingParen(paren) + 1));
         }
 
         const operator = this.findNextOperator();
         if (operator == -1) {
-            //no operator was found
+            // no operator was found, so return the leaf node
             const token = this.advance();
-            return new Node(token);
+            return new ExpressionTree(token);
         }
 
         let left = this.tokens.slice(0, operator);
@@ -39,11 +48,10 @@ export class ExpressionParser {
         const parser = new ExpressionParser(left);
         let leftTree = parser.parseExpression();
         parser.reset(right);
-        let rightTree = parser.parseExpression();  
+        let rightTree = parser.parseExpression();
 
         const op = this.tokens[operator];
-        const node = new BinaryNode(op, leftTree, rightTree);
-        return node;
+        return new ExpressionTree(op, leftTree, rightTree);
     }
 
     end() {
@@ -70,30 +78,30 @@ export class ExpressionParser {
     }
 
     /**
-     * Find the next operator in the order of presedence
+     * Find the next operator in the order of precedence
+     * 
+     * We want to build the tree with the lowest presedence at the
+     * bottom so we can evaluate from there up
      */
     findNextOperator(): number {
-        let multi = this.findNext(TokenType.STAR);
-        if (multi) {
-            return multi;
-        }
-        let slash = this.findNext(TokenType.SLASH);
-        if (slash) {
-            return slash;
-        }
-        let plus = this.findNext(TokenType.PLUS);
-        if (plus) {
-            return plus;
-        }
-        let minus = this.findNext(TokenType.MINUS);
-        if (minus) {
-            return minus;
+        const precedence = [
+            TokenType.STAR,
+            TokenType.SLASH,
+            TokenType.PLUS,
+            TokenType.MINUS
+        ];
+
+        for (let type of precedence.reverse()) {
+            const index = this.findNext(type);
+            if (index !== -1) {
+                return index;
+            }
         }
         return -1;
     }
 
-    findCorrespondingParen(): number {
-        let i = this.current;
+    findCorrespondingParen(idx: number = this.current): number {
+        let i = idx;
         let count = 0;
         while (i < this.tokens.length) {
             if (this.tokens[i].type === TokenType.LEFT_PAREN) {
