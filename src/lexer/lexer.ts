@@ -25,7 +25,9 @@ class Lexer {
     constructor(filename: string) {
         this.filename = filename;
         this.tokens = [];
-        this.readFile();
+        if (filename) {
+            this.readFile();
+        }
     }
 
     /**
