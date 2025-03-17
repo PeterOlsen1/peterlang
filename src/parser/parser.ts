@@ -1,7 +1,7 @@
 import { TokenType, Token } from "../lexer/token";
 import { ExpressionParser } from "./expressionParser";
 import { ExpressionEvaluator } from "../evaluator/expressionEvaluator";
-import { ASTNode } from "./ast";
+import { ASTNode, ExpressionNode } from "./ast";
 
 /**
  * Build an AST from a list of tokens!!!
@@ -22,12 +22,10 @@ class Parser {
         this.tokens = tokens;
     }
 
-    handleExpression(tokens: Token[]): Token {
+    handleExpression(tokens: Token[]): ASTNode {
         const parser = new ExpressionParser(tokens);
         const parsed = parser.parseExpression();
-        const evaluator = new ExpressionEvaluator(parsed);
-        const res = evaluator.evaluate();
-        return new Token(TokenType.NUMBER, res.toString(), res, tokens[0].line);
+        return new ExpressionNode(tokens[0], parsed);
     }
 
     parse() {
@@ -51,10 +49,7 @@ class Parser {
                 }
                 const expression = this.tokens.slice(this.start, expressionEnd);
                 const result = this.handleExpression(expression);
-                this.tokens = this.tokens.slice(0, this.start)
-                    .concat(result)
-                    .concat(this.tokens.slice(expressionEnd + 1));
-                return new ASTNode(result);
+                return result;
             case TokenType.IDENTIFIER:
                 const next = this.advance();
                 if (next.type === TokenType.EQUAL) {
@@ -65,10 +60,10 @@ class Parser {
                     }
                     const expression = this.tokens.slice(this.start, expressionEnd);
                     const result = this.handleExpression(expression);
-                    this.tokens = this.tokens.slice(0, this.start)
-                        .concat(result)
-                        .concat(this.tokens.slice(expressionEnd + 1));
-                    return new ASTNode(result);
+                    // this.tokens = this.tokens.slice(0, this.start)
+                    //     .concat(result)
+                    //     .concat(this.tokens.slice(expressionEnd + 1));
+                    return result;
                 }
                 break;
             default:
