@@ -1,12 +1,20 @@
 import { TokenType, Token } from "../lexer/token";
 import { ExpressionParser } from "./expressionParser";
 import { ExpressionEvaluator } from "../evaluator/expressionEvaluator";
+import { ASTNode } from "./ast";
 
 /**
  * Build an AST from a list of tokens!!!
+ * 
+ * Expressions are evaluated before being added to the AST
+ *  need this to take into account variables
+ * 
+ * Get trees of inner scopes recursively.
+ * not necessary to add line number for scope
  */
 class Parser {
     private tokens: Token[] = [];
+    private scope: ASTNode = new ASTNode(new Token(TokenType.SCOPE, "0", 0, 0));
     private current: number = 0;
     private start: number = 0;
 
@@ -14,44 +22,55 @@ class Parser {
         this.tokens = tokens;
     }
 
-    parseExpression(tokens: Token[]) {
+    handleExpression(tokens: Token[]): Token {
         const parser = new ExpressionParser(tokens);
-        return parser.parseExpression();
+        const parsed = parser.parseExpression();
+        const evaluator = new ExpressionEvaluator(parsed);
+        const res = evaluator.evaluate();
+        return new Token(TokenType.NUMBER, res.toString(), res, tokens[0].line);
     }
 
     parse() {
-        // const lines = [];
-        // let curExp = [];
-        // for (let token of this.tokens) {
-        //     if (token.type === TokenType.SEMICOLON) {
-        //         lines.push(curExp);
-        //         curExp = [];
-        //     } else {
-        //         curExp.push(token);
-        //     }
-        // }
-
         while (!this.end()) {
             this.start = this.current;
             this.parseToken();
         }
     }
 
-    parseToken() {
+    //call recurisvely on {} blocks
+    parseToken(): ASTNode | undefined {
         const t = this.advance();
         switch (t.type) {
             case TokenType.NUMBER:
             case TokenType.MINUS:
             case TokenType.PLUS:
-                console.log("Expression found!");
                 const expressionEnd = this.findNext(TokenType.SEMICOLON);
                 if (expressionEnd === -1) {
                     console.error("No semicolon found!");
                     break;
                 }
                 const expression = this.tokens.slice(this.start, expressionEnd);
-                const result = this.parseExpression(expression);
-
+                const result = this.handleExpression(expression);
+                this.tokens = this.tokens.slice(0, this.start)
+                    .concat(result)
+                    .concat(this.tokens.slice(expressionEnd + 1));
+                return new ASTNode(result);
+            case TokenType.IDENTIFIER:
+                const next = this.advance();
+                if (next.type === TokenType.EQUAL) {
+                    const expressionEnd = this.findNext(TokenType.SEMICOLON);
+                    if (expressionEnd === -1) {
+                        console.error("No semicolon found!");
+                        break;
+                    }
+                    const expression = this.tokens.slice(this.start, expressionEnd);
+                    const result = this.handleExpression(expression);
+                    this.tokens = this.tokens.slice(0, this.start)
+                        .concat(result)
+                        .concat(this.tokens.slice(expressionEnd + 1));
+                    return new ASTNode(result);
+                }
+                break;
             default:
                 console.error("Token type is not recognized!");
                 break;

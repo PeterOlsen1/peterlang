@@ -1,3 +1,5 @@
-* finish the expression parser
-* finish the AST parser
-* just go from there
+* expression parser
+  * comparison functions
+  * variables and functions
+* AST
+  * all of it

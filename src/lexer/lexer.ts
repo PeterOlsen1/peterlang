@@ -72,7 +72,6 @@ class Lexer {
             case '.': this.addToken(TokenType.DOT); break;
             case '-': this.addToken(TokenType.MINUS); break;
             case '+': this.addToken(TokenType.PLUS); break;
-            case '/': this.addToken(TokenType.SLASH); break;
             case '*': this.addToken(TokenType.STAR); break;
 
             //possible multi-character tokens
@@ -96,7 +95,9 @@ class Lexer {
                 break;
             case '/':
                 if (this.match('/')) { //comment
-                    while (this.peek() != '\n' && !this.end()) this.advance();
+                    while (this.peek() != '\n' && !this.end()) {
+                        this.advance();
+                    }
                 } else {
                     this.addToken(TokenType.SLASH);
                 }

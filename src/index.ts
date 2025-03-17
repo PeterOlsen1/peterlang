@@ -15,6 +15,7 @@ const fname = '../target.pt';
 function interpret(fname: string) {
     let lexer = new Lexer(fname);
     let tokens = lexer.lex();
+    console.log(tokens);
 
     let parser = new Parser(tokens);
     let res = parser.parse();

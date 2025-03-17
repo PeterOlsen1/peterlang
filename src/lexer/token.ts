@@ -39,6 +39,8 @@ export enum TokenType {
     CONST = "CONST",
     LET = "LET",
 
+    SCOPE = "SCOPE",
+
     ERROR = "ERROR"
 }   
 

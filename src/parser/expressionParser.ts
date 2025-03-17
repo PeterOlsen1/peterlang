@@ -19,7 +19,6 @@ export class ExpressionParser {
         // Check if the expression contains parentheses
         const paren = this.findNext(TokenType.LEFT_PAREN);
         if (paren !== -1) {
-            console.log("parenthesis");
             const sliced = this.tokens.slice(paren + 1, this.findCorrespondingParen(paren));
             const parser = new ExpressionParser(sliced);
             const inner = parser.parseExpression();
