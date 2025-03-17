@@ -19,6 +19,7 @@ function interpret(fname: string) {
 
     let parser = new Parser(tokens);
     let res = parser.parse();
+    console.log(res);
 }
 
 interpret(fname);

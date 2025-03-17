@@ -1,5 +1,9 @@
 * expression parser
   * comparison functions
   * variables and functions
-* AST
-  * all of it
+* Parser
+  * debug WHILEs
+  * IFs
+  * Functions
+  * FOR loops
+* Bubble up errors better
