@@ -72,7 +72,7 @@ class Parser {
 
                     const expression = this.tokens.slice(this.start, expressionEnd);
                     const result = this.handleExpression(expression);
-                    const varNode = new VariableNode(tIdentifier.lexeme, tIdentifier, result);
+                    const varNode = new VariableNode(tIdentifier.lexeme, tIdentifier, result, t.type === TokenType.CONST);
                     this.current = expressionEnd;
                     this.scope.add(varNode);
                 }

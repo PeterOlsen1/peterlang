@@ -7,15 +7,17 @@ import { ExpressionTree } from "../parser/expressionTree";
  * Different from an AST, an expression tree
  * will just hold an expression, whereas an AST is meant
  * to represent the entire program.
+ * 
+ * For the purposes of comparison operators, we will
+ * treat all nonzero numbers as true, and zero as false.
  */
 export class ExpressionEvaluator {
-    tree: ExpressionTree;
+    tree: ExpressionTree = new ExpressionTree(new Token(TokenType.SCOPE, "", null, 0));
 
-    constructor(tree: ExpressionTree) {
+    constructor() {}
+
+    evaluate(tree: ExpressionTree) {
         this.tree = tree;
-    }
-
-    evaluate() {
         return this.evaluateTree(this.tree);
     }
 

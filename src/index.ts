@@ -1,6 +1,7 @@
 import { ExpressionEvaluator } from "./evaluator/expressionEvaluator";
 import Lexer from "./lexer/lexer";
 import Parser from "./parser/parser";
+import Evaluator from "./evaluator/evaluator";
 
 const args = process.argv.slice(2);
 
@@ -20,6 +21,9 @@ function interpret(fname: string) {
     let parser = new Parser(tokens);
     let res = parser.parse();
     console.log(res);
+    
+    let evaluator = new Evaluator(res);
+    evaluator.evaluate();
 }
 
 interpret(fname);

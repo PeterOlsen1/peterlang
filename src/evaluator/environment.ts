@@ -1,4 +1,4 @@
-import { Token } from "../lexer/token";
+import { Token, TokenType } from "../lexer/token";
 
 /**
  * Use this for lookups within the evaluator
@@ -27,5 +27,9 @@ export class Environment {
         const newEnv = new Environment();
         newEnv.env = Object.assign({}, this.env);
         return newEnv;
+    }
+
+    merge(env: Environment) {
+        this.env = Object.assign({}, env.env);
     }
 }

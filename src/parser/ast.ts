@@ -43,11 +43,13 @@ export class FunctionNode extends ASTNode {
 export class VariableNode extends ASTNode {
     name: string;
     value: ASTNode | null;
+    constant: boolean;
 
-    constructor(name: string, from: Token, value: ASTNode | null) {
+    constructor(name: string, from: Token, value: ASTNode | null, constant: boolean = false) {
         super(from);
         this.name = name;
         this.value = value;
+        this.constant = constant;
     }
 }
 

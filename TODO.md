@@ -2,8 +2,8 @@
   * comparison functions
   * variables and functions
 * Parser
-  * debug WHILEs
-  * IFs
   * Functions
   * FOR loops
+* Evaluator
+  * Make sure environment merging works the way we want
 * Bubble up errors better
