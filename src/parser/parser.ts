@@ -1,7 +1,7 @@
 import { TokenType, Token } from "../lexer/token";
 import { ExpressionParser } from "./expressionParser";
-import { ExpressionEvaluator } from "../evaluator/expressionEvaluator";
-import { ASTNode, ExpressionNode, ScopeNode, VariableNode, WhileNode } from "./ast";
+import { ExpressionNode, IfNode, ScopeNode, VariableNode, WhileNode } from "./ast";
+import { ParserError } from "./error";
 
 /**
  * Build an AST from a list of tokens!!!
@@ -18,8 +18,9 @@ class Parser {
     private current: number = 0;
     private start: number = 0;
 
-    constructor(tokens: Token[]) {
+    constructor(tokens: Token[], scope: number = 0) {
         this.tokens = tokens;
+        this.scope.from.line = scope;
     }
 
     handleExpression(tokens: Token[]): ExpressionNode {
@@ -46,8 +47,7 @@ class Parser {
             case TokenType.PLUS:
                 const expressionEnd = this.findNext(TokenType.SEMICOLON);
                 if (expressionEnd === -1) {
-                    console.error("No semicolon found!");
-                    break;
+                    throw new ParserError("No semicolon found!", t);
                 }
                 const expression = this.tokens.slice(this.start, expressionEnd);
                 const result = this.handleExpression(expression);
@@ -59,8 +59,7 @@ class Parser {
                 //make sure there is an identifier after a let/const
                 const tIdentifier = this.advance();
                 if (tIdentifier.type !== TokenType.IDENTIFIER) {
-                    console.error("Expected identifier after let/const!");
-                    break;
+                    throw new ParserError("Expexted identifier after let/const!", t);
                 }
 
                 //ensure equal sign after identifier
@@ -68,8 +67,7 @@ class Parser {
                 if (next.type === TokenType.EQUAL) {
                     const expressionEnd = this.findNext(TokenType.SEMICOLON);
                     if (expressionEnd === -1) {
-                        console.error("No semicolon found!");
-                        break;
+                        throw new ParserError("No semicolon found!", t);
                     }
 
                     const expression = this.tokens.slice(this.start, expressionEnd);
@@ -87,10 +85,9 @@ class Parser {
             case TokenType.LEFT_BRACE:
                 const end = this.findCorrespondingBrace(this.current - 1);
                 if (end === -1) {
-                    console.error("No corresponding brace found!");
-                    break;
+                    throw new ParserError("No corresponding brace found!", t);
                 }
-                const innerScope = new Parser(this.tokens.slice(this.current, end)).parse();
+                const innerScope = new Parser(this.tokens.slice(this.current, end), t.line).parse();
                 this.scope.add(innerScope);
                 this.current = end;
                 break;
@@ -98,39 +95,115 @@ class Parser {
                 //find the while loop condition
                 const startParen = this.advance();
                 if (startParen.type !== TokenType.LEFT_PAREN) {
-                    console.error("Expected '(' after while!");
-                    break;
+                    throw new ParserError("Expected '(' after while!", t);
                 }
 
                 const endParen = this.findCorrespondingParen(this.current);
                 if (endParen === -1) {
-                    console.error("No corresponding ')' found!");
-                    break;
+                    throw new ParserError("No corresponding ')' found!", startParen);
                 }
 
+                //make expression node out of the condition
                 const tokenSlice = this.tokens.slice(this.current, endParen);
                 const condition = this.handleExpression(tokenSlice);
                 this.current = endParen;
 
                 const startBrace = this.advance();
                 if (startBrace.type !== TokenType.LEFT_BRACE) {
-                    console.error("Expected '{' after while!");
-                    break;
+                    throw new ParserError("Expected '{' after while!", t);
                 }
 
                 const endBrace = this.findCorrespondingBrace(this.current);
                 if (endBrace === -1) {
-                    console.error(`No corresponding '}' found for while on line ${startParen.line}!`);
-                    break;
+                    throw new ParserError("No corresponding '}' found!", startBrace);
                 }
 
-                const innerWhile = new Parser(this.tokens.slice(this.current, endBrace)).parse();
+                const innerWhile = new Parser(this.tokens.slice(this.current, endBrace), t.line).parse();
                 this.current = endBrace;
                 const whileNode = new WhileNode(t, condition, innerWhile);
                 this.scope.add(whileNode);
-            default:
-                console.error("Token type is not recognized!");
                 break;
+            case TokenType.IF:
+                //find the if condition and parenthesis locations
+                const lParen = this.advance();
+                if (lParen.type !== TokenType.LEFT_PAREN) {
+                    throw new ParserError("Expected '(' after if!", t);
+                }
+
+                const rParen = this.findCorrespondingParen(this.current);
+                if (rParen === -1) {
+                    throw new ParserError("No corresponding ')' found!", lParen);
+                }
+
+                //handle the expression
+                const exp = this.tokens.slice(this.current, rParen);
+                const conditionNode = this.handleExpression(exp);
+                this.current = rParen;
+
+                //find the body of the if statement
+                const lBrace = this.advance();
+                if (lBrace.type !== TokenType.LEFT_BRACE) {
+                    throw new ParserError("Expected '{' after if!", t);
+                }
+
+                const rBrace = this.findCorrespondingBrace(this.current);
+                if (rBrace === -1) {
+                    throw new ParserError("No corresponding '}' found!", lBrace);
+                }
+
+                //parse the scope
+                const ifBlock = this.tokens.slice(this.current, rBrace);
+                const ifScope = new Parser(ifBlock, t.line).parse();
+                this.current = rBrace;
+
+                //check out the else. if it doesn't exist, just add the if scope
+                let elseScope: ScopeNode | null = null;
+                const elseToken = this.advance();
+                if (elseToken.type === TokenType.ELSE) {
+                    const elseBrace = this.advance();
+                    if (elseBrace.type !== TokenType.LEFT_BRACE) {
+                        throw new ParserError("Expected '{' after else!", elseToken);
+                    }
+                    const elseEndBrace = this.findCorrespondingBrace(this.current);
+                    if (elseEndBrace === -1) {
+                        throw new ParserError("No corresponding '}' found!", elseBrace);
+                    }
+                    const elseBlock = this.tokens.slice(this.current, elseEndBrace);
+                    elseScope = new Parser(elseBlock, t.line).parse();
+                    this.current = elseEndBrace;
+                }
+
+                //add the node to the scope
+                const ifNode = new IfNode(t, conditionNode, ifScope, elseScope);
+                this.scope.add(ifNode);
+                break;
+            case TokenType.IDENTIFIER:
+                //do other stuff if this is a function
+                const eq = this.advance();
+                if (eq.type === TokenType.EQUAL) {
+                    const expressionEnd = this.findNext(TokenType.SEMICOLON);
+                    if (expressionEnd === -1) {
+                        throw new ParserError("No semicolon found!", t);
+                    }
+
+                    const expression = this.tokens.slice(this.start, expressionEnd);
+                    const result = this.handleExpression(expression);
+                    const varNode = new VariableNode(t.lexeme, t, result);
+                    this.current = expressionEnd;
+                    this.scope.add(varNode);
+                }
+                break;
+            case TokenType.SEMICOLON:
+                break;
+            case TokenType.RIGHT_BRACE:
+                if (this.scope.from.line === 0) {
+                    throw new ParserError("Unexpected '}'!", t);
+                }
+                else {
+                    break;
+                }
+            default:
+                throw new ParserError("Token type is not recognized!", t);
         }
     }
 
@@ -179,7 +252,7 @@ class Parser {
             }
 
             if (count === 0) {
-                return i;
+                return i + 1;
             }
         }
 
@@ -196,7 +269,7 @@ class Parser {
             }
 
             if (count === 0) {
-                return i;
+                return i + 1;
             }
         }
 

@@ -70,3 +70,16 @@ export class WhileNode extends ASTNode {
         this.body = body;
     }
 }
+
+export class IfNode extends ASTNode {
+    condition: ExpressionNode;
+    body: ScopeNode;
+    elseBody: ScopeNode | null;
+
+    constructor(from: Token, condition: ExpressionNode, body: ScopeNode, elseBody: ScopeNode | null) {
+        super(from);
+        this.condition = condition;
+        this.body = body;
+        this.elseBody = elseBody;
+    }
+}

@@ -2,8 +2,8 @@ export enum TokenType {
     //define single character tokens
     RIGHT_PAREN = ")",
     LEFT_PAREN = "(",
-    RIGHT_BRACE = "{",
-    LEFT_BRACE = "}",
+    RIGHT_BRACE = "}",
+    LEFT_BRACE = "{",
     SEMICOLON = ";",
     COMMA = ",",
     DOT = ".",
