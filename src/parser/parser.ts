@@ -192,10 +192,23 @@ class Parser {
                     this.current = expressionEnd;
                     this.scope.add(varNode);
                 }
+                else if (this.isExpressionToken(eq)) {
+                    this.goBack();
+                    const expressionEnd = this.findNext(TokenType.SEMICOLON);
+                    if (expressionEnd === -1) {
+                        throw new ParserError("No semicolon found!", t);
+                    }
+
+                    const expression = this.tokens.slice(this.start, expressionEnd);
+                    const result = this.handleExpression(expression);
+                    this.scope.add(result);
+                    this.current = expressionEnd;
+                }
                 break;
             case TokenType.SEMICOLON:
                 break;
             case TokenType.RIGHT_BRACE:
+                //an unmatched right brace is an issue if we are in the global scope
                 if (this.scope.from.line === 0) {
                     throw new ParserError("Unexpected '}'!", t);
                 }
@@ -205,6 +218,10 @@ class Parser {
             default:
                 throw new ParserError("Token type is not recognized!", t);
         }
+    }
+
+    goBack() {
+        this.current--;
     }
 
     advance() {
@@ -217,6 +234,21 @@ class Parser {
 
     advanceTo(pos: number) {
         this.current = pos;
+    }
+
+    isExpressionToken(t: Token) {
+        return t.type === TokenType.PLUS ||
+            t.type === TokenType.MINUS ||
+            t.type === TokenType.STAR ||
+            t.type === TokenType.SLASH || 
+            t.type === TokenType.GREATER ||
+            t.type === TokenType.LESS ||
+            t.type === TokenType.EQUAL_EQUAL ||
+            t.type === TokenType.BANG_EQUAL ||
+            t.type === TokenType.LESS_EQUAL ||
+            t.type === TokenType.GREATER_EQUAL ||
+            t.type === TokenType.AND ||
+            t.type === TokenType.OR;
     }
 
     /**
